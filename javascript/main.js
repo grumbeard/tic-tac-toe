@@ -27,14 +27,19 @@ const gameBoard = (function () {
 // Players Module
 const players = (function () {
   const _playerOne = {
+    id: "playerOne",
     score: 0,
     mark: 'X'
   };
   const _playerTwo = {
+    id: "playerTwo",
     score: 0,
     mark: 'O'
   }
 
+  function getPlayers() {
+    return [_playerOne, _playerTwo];
+  }
   function addPoint(player) {
     if (player == "playerOne") {
       _playerOne.score += 1;
@@ -50,6 +55,7 @@ const players = (function () {
   }
 
   return {
+    getPlayers,
     addPoint,
     getScores
   };
@@ -58,23 +64,32 @@ const players = (function () {
 
 // Display Controller Module
 const displayController = (function (doc) {
-  const gameBoard = doc.getElementById("gameBoard");
+  _gameBoard = doc.getElementById("gameBoard");
 
   function renderBoard(board) {
+    let index = 0;
     board.forEach(mark => {
       let cell = doc.createElement("div");
       cell.classList.add("cell");
+      cell.dataset["cell"] = index;
       cell.innerText = mark;
-      if (gameBoard) gameBoard.appendChild(cell);
+      cell.addEventListener("click", game.makeMove);
+      if (_gameBoard) _gameBoard.appendChild(cell);
+      index++;
     });
   }
   function askPlayer(player) {
     console.log("Please make a move", player);
   }
+  function updateCell(index, mark) {
+    let cell = _gameBoard.children.item(index);
+    cell.innerText = mark;
+  }
 
   return {
     renderBoard,
-    askPlayer
+    askPlayer,
+    updateCell
   };
 // pass document element as argument to make dependency explicit
 })(document);
@@ -82,43 +97,61 @@ const displayController = (function (doc) {
 
 // Game Module
 const game = (function (gameBoard, displayController) {
-  let _hasEnded = false;
-  let _winner = null;
-  let _currentPlayer = "playerOne";
+  let _winner;
+  let _currentPlayer;
 
   function init() {
-    _hasEnded = false;
     _winner = null;
-    _currentPlayer = "playerOne";
+    _currentPlayer = players.getPlayers()[0];
     gameBoard.setupBoard();
 
     let board = gameBoard.getBoard();
     displayController.renderBoard(board);
   }
-  function hasEnded() {
-    return _hasEnded;
-  }
   function getMove() {
-    displayController.askPlayer(_currentPlayer);
+    displayController.askPlayer(_currentPlayer.id);
   }
-  function evaluateMove() {
+  function makeMove(e) {
+    if (!e.target.innerText) {
+      let index = e.target.dataset.cell;
+      gameBoard.addMark(index, _currentPlayer.mark);
+      displayController.updateCell(index, _currentPlayer.mark);
+      _evaluateMove();
+    }
+  }
+  function _evaluateMove() {
     // Check if a player has won
-    _makeWinner("playerOne");
+    let board = gameBoard.getBoard();
+    if (!board.includes(null)) {
+      _makeWinner(_currentPlayer)
+    } else {
+      // Else make it other player's turn
+      _switchCurrentPlayer();
+      getMove();
+    }
+  }
+  function _switchCurrentPlayer() {
+    switch (_currentPlayer.id) {
+      case "playerOne":
+        _currentPlayer = players.getPlayers()[1];
+        break;
+      case "playerTwo":
+        _currentPlayer = players.getPlayers()[0];
+        break;
+    }
   }
   function _makeWinner(player) {
     _winner = player;
     _endGame();
   }
   function _endGame() {
-    _hasEnded = true;
-    console.log(_winner, "has won");
+    console.log(_winner.id, "has won");
   }
 
   return {
     init,
-    hasEnded,
     getMove,
-    evaluateMove
+    makeMove
   };
 // pass Modules as arguments to make dependency explicit
 })(gameBoard, displayController);
@@ -127,8 +160,5 @@ const game = (function (gameBoard, displayController) {
 // Init Game with IIFE
 (function () {
   game.init();
-  while (!game.hasEnded()) {
-    game.getMove();
-    game.evaluateMove();
-  }
+  game.getMove();
 })();
