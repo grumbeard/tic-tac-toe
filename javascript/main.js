@@ -98,11 +98,12 @@ const displayController = (function (doc) {
 // Game Module
 const game = (function (gameBoard, displayController) {
   let _winner;
+  let _players = players.getPlayers();
   let _currentPlayer;
 
   function init() {
     _winner = null;
-    _currentPlayer = players.getPlayers()[0];
+    _currentPlayer = _players[0];
     gameBoard.setupBoard();
 
     let board = gameBoard.getBoard();
@@ -133,10 +134,10 @@ const game = (function (gameBoard, displayController) {
   function _switchCurrentPlayer() {
     switch (_currentPlayer.id) {
       case "playerOne":
-        _currentPlayer = players.getPlayers()[1];
+        _currentPlayer = _players[1];
         break;
       case "playerTwo":
-        _currentPlayer = players.getPlayers()[0];
+        _currentPlayer = _players[0];
         break;
     }
   }
