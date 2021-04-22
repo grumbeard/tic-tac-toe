@@ -103,13 +103,13 @@ const game = (function (gameBoard, displayController) {
   }
   function evaluateMove() {
     // Check if a player has won
-    makeWinner("playerOne");
+    _makeWinner("playerOne");
   }
-  function makeWinner(player) {
+  function _makeWinner(player) {
     _winner = player;
-    endGame();
+    _endGame();
   }
-  function endGame() {
+  function _endGame() {
     _hasEnded = true;
     console.log(_winner, "has won");
   }
@@ -118,9 +118,7 @@ const game = (function (gameBoard, displayController) {
     init,
     hasEnded,
     getMove,
-    evaluateMove,
-    makeWinner,
-    endGame
+    evaluateMove
   };
 // pass Modules as arguments to make dependency explicit
 })(gameBoard, displayController);
