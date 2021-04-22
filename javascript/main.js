@@ -49,7 +49,10 @@ const players = (function () {
     };
   }
 
-  return { addPoint };
+  return {
+    addPoint,
+    getScores
+  };
 })();
 
 
@@ -62,27 +65,72 @@ const displayController = (function (doc) {
       let cell = doc.createElement("div");
       cell.classList.add("cell");
       cell.innerText = mark;
-      gameBoard.appendChild(cell);
+      if (gameBoard) gameBoard.appendChild(cell);
     });
+  }
+  function askPlayer(player) {
+    console.log("Please make a move", player);
   }
 
   return {
-    renderBoard
+    renderBoard,
+    askPlayer
   };
+// pass document element as argument to make dependency explicit
 })(document);
 
 
-// Game Module (IIFE)
-(function () {
-  const game = {
-    hasGameEnded: false,
-    init: function () {
-      gameBoard.setupBoard();
+// Game Module
+const game = (function (gameBoard, displayController) {
+  let _hasEnded = false;
+  let _winner = null;
+  let _currentPlayer = "playerOne";
 
-      let board = gameBoard.getBoard();
-      displayController.renderBoard(board);
-    }
+  function init() {
+    _hasEnded = false;
+    _winner = null;
+    _currentPlayer = "playerOne";
+    gameBoard.setupBoard();
+
+    let board = gameBoard.getBoard();
+    displayController.renderBoard(board);
+  }
+  function hasEnded() {
+    return _hasEnded;
+  }
+  function getMove() {
+    displayController.askPlayer(_currentPlayer);
+  }
+  function evaluateMove() {
+    // Check if a player has won
+    makeWinner("playerOne");
+  }
+  function makeWinner(player) {
+    _winner = player;
+    endGame();
+  }
+  function endGame() {
+    _hasEnded = true;
+    console.log(_winner, "has won");
   }
 
+  return {
+    init,
+    hasEnded,
+    getMove,
+    evaluateMove,
+    makeWinner,
+    endGame
+  };
+// pass Modules as arguments to make dependency explicit
+})(gameBoard, displayController);
+
+
+// Init Game with IIFE
+(function () {
   game.init();
+  while (!game.hasEnded()) {
+    game.getMove();
+    game.evaluateMove();
+  }
 })();
