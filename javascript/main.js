@@ -50,11 +50,21 @@ const players = (function () {
   function addPoint(player) {
     player.score += 1;
   }
+  function resetScores() {
+    _playerOne.score = 0;
+    _playerTwo.score = 0;
+  }
+  function resetMoves() {
+    _playerOne.moves = [];
+    _playerTwo.moves = [];
+  }
 
   return {
     getPlayers,
     logMove,
-    addPoint
+    addPoint,
+    resetScores,
+    resetMoves
   };
 })();
 
@@ -64,13 +74,16 @@ const players = (function () {
 const displayController = (function (doc) {
   _gameBoard = doc.getElementById("game-board");
 
-  function renderBoard(board) {
+  function renderBoard(boardData) {
+    // Clear board of existing moves
+    _gameBoard.innerHTML = "";
+
     let index = 0;
-    board.forEach(mark => {
+    boardData.forEach(cellData => {
       let cell = doc.createElement("div");
       cell.classList.add("cell");
       cell.dataset["cell"] = index;
-      cell.innerText = mark;
+      cell.innerText = cellData;
       cell.addEventListener("click", game.makeMove);
       if (_gameBoard) _gameBoard.appendChild(cell);
       index++;
@@ -95,20 +108,30 @@ const displayController = (function (doc) {
 
 // Game Module
 // Responsibility: Manage access and changes to Game states
-const game = (function (gameBoard, players, displayController) {
+const game = (function (doc, gameBoard, players, displayController) {
   let _winner;
   let _players = players.getPlayers();
   let _currentPlayer;
 
-  function init() {
+  function initGame() {
     _winner = null;
+    players.resetMoves();
     _currentPlayer = _players[0];
     gameBoard.setupBoard();
 
-    let board = gameBoard.getBoard();
-    displayController.renderBoard(board);
+    let boardData = gameBoard.getBoard();
+    displayController.renderBoard(boardData);
+    _getMove();
   }
-  function getMove() {
+  function initControls() {
+    // Separate init of controls because reinitialization of controls
+    // unnecessary when restarting game / setting up next round
+    let restartBtn = doc.getElementById("restart-btn");
+    restartBtn.addEventListener("click", _restartGame);
+    let nextRoundBtn = doc.getElementById("next-round-btn");
+    nextRoundBtn.addEventListener("click", initGame);
+  }
+  function _getMove() {
     displayController.promptPlayer(_currentPlayer.id);
   }
   function makeMove(e) {
@@ -131,21 +154,37 @@ const game = (function (gameBoard, players, displayController) {
         _makeWinner(_currentPlayer);
       } else {
         _switchCurrentPlayer();
-        getMove();
+        _getMove();
       }
     } else if (movesToEvaluate.length >= 5) {
       _makeWinner(_currentPlayer);
     } else {
       // Else make it other player's turn
       _switchCurrentPlayer();
-      getMove();
+      _getMove();
     }
+    console.log([_players[0].score, _players[1].score]);
   }
   function _isWinningCombination(moves) {
-    // Winning combinations will have an index sum of either
-    // 3, 9, 12, 15, or 21
-    let sum = moves.reduce((a, b) => a += b);
-    return ([3, 9, 12 ,15 ,21].includes(sum));
+    const winningCombo = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+    let result = false;
+
+    winningCombo.forEach(combo => {
+      if (combo.every(num => moves.includes(num))) {
+        result = true;
+      }
+    });
+
+    return result;
   }
   function _switchCurrentPlayer() {
     _currentPlayer = _currentPlayer.id == "playerOne" ? _players[1] : _players[0];
@@ -158,18 +197,24 @@ const game = (function (gameBoard, players, displayController) {
   function _endGame() {
     console.log(_winner.id, "has won");
   }
+  function _restartGame() {
+    console.log("Restarting");
+    players.resetScores();
+    players.resetMoves();
+    initGame();
+  }
 
   return {
-    init,
-    getMove,
+    initGame,
+    initControls,
     makeMove
   };
 // pass Modules as arguments to make dependency explicit
-})(gameBoard, players, displayController);
+})(document, gameBoard, players, displayController);
 
 
 // Init Game with IIFE
 (function () {
-  game.init();
-  game.getMove();
+  game.initGame();
+  game.initControls();
 })();
