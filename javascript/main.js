@@ -1,4 +1,5 @@
 // Gameboard Module
+// Responsibility: Manage access and changes to Game Board states
 const gameBoard = (function () {
   let _boardSize = 3;
   let _gameBoard = [];
@@ -25,46 +26,43 @@ const gameBoard = (function () {
 
 
 // Players Module
+// Responsibility: Manage access and changes to Player states
 const players = (function () {
   const _playerOne = {
     id: "playerOne",
     score: 0,
-    mark: 'X'
+    mark: 'X',
+    moves: []
   };
   const _playerTwo = {
     id: "playerTwo",
     score: 0,
-    mark: 'O'
+    mark: 'O',
+    moves: []
   }
 
   function getPlayers() {
     return [_playerOne, _playerTwo];
   }
-  function addPoint(player) {
-    if (player == "playerOne") {
-      _playerOne.score += 1;
-    } else if (player == "playerTwo") {
-      _playerTwo.score += 1;
-    }
+  function logMove(player, move) {
+    player.moves.push(move);
   }
-  function getScores() {
-    return {
-      playerOne: _playerOne.score,
-      playerTwo: _playerTwo.score
-    };
+  function addPoint(player) {
+    player.score += 1;
   }
 
   return {
     getPlayers,
-    addPoint,
-    getScores
+    logMove,
+    addPoint
   };
 })();
 
 
 // Display Controller Module
+// Responsibility: Render and manage changes to interface
 const displayController = (function (doc) {
-  _gameBoard = doc.getElementById("gameBoard");
+  _gameBoard = doc.getElementById("game-board");
 
   function renderBoard(board) {
     let index = 0;
@@ -78,7 +76,7 @@ const displayController = (function (doc) {
       index++;
     });
   }
-  function askPlayer(player) {
+  function promptPlayer(player) {
     console.log("Please make a move", player);
   }
   function updateCell(index, mark) {
@@ -88,7 +86,7 @@ const displayController = (function (doc) {
 
   return {
     renderBoard,
-    askPlayer,
+    promptPlayer,
     updateCell
   };
 // pass document element as argument to make dependency explicit
@@ -96,7 +94,8 @@ const displayController = (function (doc) {
 
 
 // Game Module
-const game = (function (gameBoard, displayController) {
+// Responsibility: Manage access and changes to Game states
+const game = (function (gameBoard, players, displayController) {
   let _winner;
   let _players = players.getPlayers();
   let _currentPlayer;
@@ -110,39 +109,50 @@ const game = (function (gameBoard, displayController) {
     displayController.renderBoard(board);
   }
   function getMove() {
-    displayController.askPlayer(_currentPlayer.id);
+    displayController.promptPlayer(_currentPlayer.id);
   }
   function makeMove(e) {
     if (!e.target.innerText) {
-      let index = e.target.dataset.cell;
+      let index = parseInt(e.target.dataset.cell);
+      e.target.removeEventListener("click", makeMove);
+
       gameBoard.addMark(index, _currentPlayer.mark);
       displayController.updateCell(index, _currentPlayer.mark);
+      players.logMove(_currentPlayer, index);
       _evaluateMove();
     }
   }
   function _evaluateMove() {
     // Check if a player has won
-    let board = gameBoard.getBoard();
-    if (!board.includes(null)) {
-      _makeWinner(_currentPlayer)
+    let movesToEvaluate = _currentPlayer.moves;
+
+    if (movesToEvaluate.length >= 3) {
+      if (_isWinningCombination(movesToEvaluate)) {
+        _makeWinner(_currentPlayer);
+      } else {
+        _switchCurrentPlayer();
+        getMove();
+      }
+    } else if (movesToEvaluate.length >= 5) {
+      _makeWinner(_currentPlayer);
     } else {
       // Else make it other player's turn
       _switchCurrentPlayer();
       getMove();
     }
   }
+  function _isWinningCombination(moves) {
+    // Winning combinations will have an index sum of either
+    // 3, 9, 12, 15, or 21
+    let sum = moves.reduce((a, b) => a += b);
+    return ([3, 9, 12 ,15 ,21].includes(sum));
+  }
   function _switchCurrentPlayer() {
-    switch (_currentPlayer.id) {
-      case "playerOne":
-        _currentPlayer = _players[1];
-        break;
-      case "playerTwo":
-        _currentPlayer = _players[0];
-        break;
-    }
+    _currentPlayer = _currentPlayer.id == "playerOne" ? _players[1] : _players[0];
   }
   function _makeWinner(player) {
     _winner = player;
+    players.addPoint(player);
     _endGame();
   }
   function _endGame() {
@@ -155,7 +165,7 @@ const game = (function (gameBoard, displayController) {
     makeMove
   };
 // pass Modules as arguments to make dependency explicit
-})(gameBoard, displayController);
+})(gameBoard, players, displayController);
 
 
 // Init Game with IIFE
