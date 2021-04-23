@@ -88,6 +88,10 @@ const displayController = (function (doc) {
       index++;
     });
   }
+  function displayScore(players) {
+    game.playerScores[0].innerText = players[0].score;
+    game.playerScores[1].innerText = players[1].score;
+  }
   function promptPlayer(player) {
     console.log("Please make a move", player);
   }
@@ -104,6 +108,7 @@ const displayController = (function (doc) {
 
   return {
     renderBoard,
+    displayScore,
     promptPlayer,
     updateCell,
     hide,
@@ -128,6 +133,7 @@ const game = (function (doc, gameBoard, players, displayController) {
 
     let boardData = gameBoard.getBoard();
     displayController.renderBoard(boardData);
+    displayController.displayScore(_players);
     displayController.hide(game.nextRoundBtn);
     _getMove();
   }
@@ -135,6 +141,10 @@ const game = (function (doc, gameBoard, players, displayController) {
     this.gameBoard = doc.getElementById("game-board");
     this.restartBtn = doc.getElementById("restart-btn");
     this.nextRoundBtn = doc.getElementById("next-round-btn");
+    this.playerScores = [
+      doc.querySelector("#player-one-score"),
+      doc.querySelector("#player-two-score")
+    ];
   }
   function initControls() {
     // Separate init of controls because reinitialization of controls
@@ -203,6 +213,7 @@ const game = (function (doc, gameBoard, players, displayController) {
   function _makeWinner(player) {
     _winner = player;
     players.addPoint(player);
+    displayController.displayScore(_players);
     _endRound();
   }
   function _endRound() {
