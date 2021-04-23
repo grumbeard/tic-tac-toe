@@ -72,11 +72,10 @@ const players = (function () {
 // Display Controller Module
 // Responsibility: Render and manage changes to interface
 const displayController = (function (doc) {
-  _gameBoard = doc.getElementById("game-board");
 
   function renderBoard(boardData) {
     // Clear board of existing moves
-    _gameBoard.innerHTML = "";
+    game.gameBoard.innerHTML = "";
 
     let index = 0;
     boardData.forEach(cellData => {
@@ -85,7 +84,7 @@ const displayController = (function (doc) {
       cell.dataset["cell"] = index;
       cell.innerText = cellData;
       cell.addEventListener("click", game.makeMove);
-      if (_gameBoard) _gameBoard.appendChild(cell);
+      if (game.gameBoard) game.gameBoard.appendChild(cell);
       index++;
     });
   }
@@ -93,14 +92,22 @@ const displayController = (function (doc) {
     console.log("Please make a move", player);
   }
   function updateCell(index, mark) {
-    let cell = _gameBoard.children.item(index);
+    let cell = game.gameBoard.children.item(index);
     cell.innerText = mark;
+  }
+  function hide(element) {
+    if (!element.classList.contains("hide")) element.classList.add("hide");
+  }
+  function show(element) {
+    if (element.classList.contains("hide")) element.classList.remove("hide");
   }
 
   return {
     renderBoard,
     promptPlayer,
-    updateCell
+    updateCell,
+    hide,
+    show
   };
 // pass document element as argument to make dependency explicit
 })(document);
@@ -121,15 +128,19 @@ const game = (function (doc, gameBoard, players, displayController) {
 
     let boardData = gameBoard.getBoard();
     displayController.renderBoard(boardData);
+    displayController.hide(game.nextRoundBtn);
     _getMove();
+  }
+  function cacheDom() {
+    this.gameBoard = doc.getElementById("game-board");
+    this.restartBtn = doc.getElementById("restart-btn");
+    this.nextRoundBtn = doc.getElementById("next-round-btn");
   }
   function initControls() {
     // Separate init of controls because reinitialization of controls
     // unnecessary when restarting game / setting up next round
-    let restartBtn = doc.getElementById("restart-btn");
-    restartBtn.addEventListener("click", _restartGame);
-    let nextRoundBtn = doc.getElementById("next-round-btn");
-    nextRoundBtn.addEventListener("click", initGame);
+    this.restartBtn.addEventListener("click", _restartGame);
+    this.nextRoundBtn.addEventListener("click", initGame);
   }
   function _getMove() {
     displayController.promptPlayer(_currentPlayer.id);
@@ -192,10 +203,17 @@ const game = (function (doc, gameBoard, players, displayController) {
   function _makeWinner(player) {
     _winner = player;
     players.addPoint(player);
-    _endGame();
+    _endRound();
   }
-  function _endGame() {
+  function _endRound() {
     console.log(_winner.id, "has won");
+    freezeBoard();
+    displayController.show(game.nextRoundBtn);
+  }
+  function freezeBoard() {
+    game.gameBoard.childNodes.forEach(cell => {
+      cell.removeEventListener("click", makeMove);
+    });
   }
   function _restartGame() {
     console.log("Restarting");
@@ -206,6 +224,7 @@ const game = (function (doc, gameBoard, players, displayController) {
 
   return {
     initGame,
+    cacheDom,
     initControls,
     makeMove
   };
@@ -215,6 +234,7 @@ const game = (function (doc, gameBoard, players, displayController) {
 
 // Init Game with IIFE
 (function () {
+  game.cacheDom();
   game.initGame();
   game.initControls();
 })();
