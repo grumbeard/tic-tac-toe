@@ -170,15 +170,15 @@ const game = (function (doc, gameBoard, players, displayController) {
     // Check if a player has won
     let movesToEvaluate = _currentPlayer.moves;
 
-    if (movesToEvaluate.length >= 3) {
+    if (movesToEvaluate.length >= 5) {
+      _drawRound();
+    } else if (movesToEvaluate.length >= 3) {
       if (_isWinningCombination(movesToEvaluate)) {
         _makeWinner(_currentPlayer);
       } else {
         _switchCurrentPlayer();
         _getMove();
       }
-    } else if (movesToEvaluate.length >= 5) {
-      _makeWinner(_currentPlayer);
     } else {
       // Else make it other player's turn
       _switchCurrentPlayer();
@@ -216,12 +216,16 @@ const game = (function (doc, gameBoard, players, displayController) {
     displayController.displayScore(_players);
     _endRound();
   }
+  function _drawRound() {
+    console.log("DRAW");
+    _freezeBoard();
+  }
   function _endRound() {
     console.log(_winner.id, "has won");
-    freezeBoard();
+    _freezeBoard();
     displayController.show(game.nextRoundBtn);
   }
-  function freezeBoard() {
+  function _freezeBoard() {
     game.gameBoard.childNodes.forEach(cell => {
       cell.removeEventListener("click", makeMove);
     });
