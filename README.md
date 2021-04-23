@@ -1,1 +1,2 @@
-# tic-tac-toe
+# The Odin Project
+# Project #6: Tic Tac Toe
