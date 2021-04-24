@@ -101,6 +101,10 @@ const displayController = (function (doc) {
     game.playerNames[0].innerText = players[0].name;
     game.playerNames[1].innerText = players[1].name;
   }
+  function clearInputs() {
+    game.form.elements[id="player-one-name"].value = null;
+    game.form.elements[id="player-two-name"].value = null;
+  }
   function displayScore(players) {
     game.playerScores[0].innerText = players[0].score;
     game.playerScores[1].innerText = players[1].score;
@@ -136,6 +140,7 @@ const displayController = (function (doc) {
   return {
     renderBoard,
     updateNames,
+    clearInputs,
     displayScore,
     promptPlayer,
     updateCell,
@@ -171,6 +176,7 @@ const game = (function (doc, gameBoard, players, displayController) {
     displayController.hide(game.popup);
     players.setPlayerNames();
     displayController.updateNames(_players);
+    displayController.clearInputs();
 
     // Remove unnecessary DOM caches
     game.form.removeEventListener("click", _initGame);
@@ -293,7 +299,8 @@ const game = (function (doc, gameBoard, players, displayController) {
     console.log("Restarting");
     players.resetScores();
     players.resetMoves();
-    _initRound();
+    init.call(game);
+    displayController.show(game.popup);
   }
 
   return {
