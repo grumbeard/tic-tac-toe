@@ -29,18 +29,26 @@ const gameBoard = (function () {
 // Responsibility: Manage access and changes to Player states
 const players = (function () {
   const _playerOne = {
-    id: "playerOne",
+    id: 1,
+    name: null,
     score: 0,
     mark: 'x',
     moves: []
   };
   const _playerTwo = {
-    id: "playerTwo",
+    id: 2,
+    name: null,
     score: 0,
     mark: 'o',
     moves: []
   }
 
+  function setPlayerNames() {
+    let inputs = game.form.elements;
+
+    _playerOne.name = inputs[id="player-one-name"].value || "PLAYER 1";
+    _playerTwo.name = inputs[id="player-two-name"].value || "PLAYER 2";
+  }
   function getPlayers() {
     return [_playerOne, _playerTwo];
   }
@@ -60,6 +68,7 @@ const players = (function () {
   }
 
   return {
+    setPlayerNames,
     getPlayers,
     logMove,
     addPoint,
@@ -88,12 +97,16 @@ const displayController = (function (doc) {
       index++;
     });
   }
+  function updateNames(players) {
+    game.playerNames[0].innerText = players[0].name;
+    game.playerNames[1].innerText = players[1].name;
+  }
   function displayScore(players) {
     game.playerScores[0].innerText = players[0].score;
     game.playerScores[1].innerText = players[1].score;
   }
   function promptPlayer(player) {
-    console.log("Please make a move", player);
+    console.log("Please make a move", player.name);
   }
   function updateCell(index, mark) {
     let cell = game.gameBoard.children.item(index);
@@ -122,6 +135,7 @@ const displayController = (function (doc) {
 
   return {
     renderBoard,
+    updateNames,
     displayScore,
     promptPlayer,
     updateCell,
@@ -142,13 +156,28 @@ const game = (function (doc, gameBoard, players, displayController) {
   let _currentPlayer;
 
   function init() {
-    this.startBtn = doc.getElementById("start-btn");
+    this.form = doc.getElementById("start-popup");
     this.popup = doc.querySelector(".popup-container");
-    this.startBtn.addEventListener("click", _initGame);
+    this.playerNames = [
+      doc.getElementById("player-one-name"),
+      doc.getElementById("player-two-name")
+    ];
+
+    this.form.addEventListener("submit", _initGame);
   }
-  function _initGame() {
+  function _initGame(e) {
+    e.preventDefault();
     console.log("start");
     displayController.hide(game.popup);
+    players.setPlayerNames();
+    displayController.updateNames(_players);
+
+    // Remove unnecessary DOM caches
+    game.form.removeEventListener("click", _initGame);
+    delete game.form;
+    delete game.popup;
+    delete game.playerNames;
+
     _cacheDom.call(game);
     _initRound.call(game);
     _initControls.call(game);
@@ -158,8 +187,8 @@ const game = (function (doc, gameBoard, players, displayController) {
     this.restartBtn = doc.getElementById("restart-btn");
     this.nextRoundBtn = doc.getElementById("next-round-btn");
     this.playerScores = [
-      doc.querySelector("#player-one-score"),
-      doc.querySelector("#player-two-score")
+      doc.getElementById("player-one-score"),
+      doc.getElementById("player-two-score")
     ];
   }
   function _initRound() {
@@ -180,7 +209,7 @@ const game = (function (doc, gameBoard, players, displayController) {
     this.nextRoundBtn.addEventListener("click", _initRound);
   }
   function _getMove() {
-    displayController.promptPlayer(_currentPlayer.id);
+    displayController.promptPlayer(_currentPlayer);
   }
   function makeMove(e) {
     if (!e.target.innerText) {
@@ -237,7 +266,7 @@ const game = (function (doc, gameBoard, players, displayController) {
     return result;
   }
   function _switchCurrentPlayer() {
-    _currentPlayer = _currentPlayer.id == "playerOne" ? _players[1] : _players[0];
+    _currentPlayer = _currentPlayer.id == 1 ? _players[1] : _players[0];
   }
   function _makeWinner(player) {
     _winner = player;
@@ -251,7 +280,7 @@ const game = (function (doc, gameBoard, players, displayController) {
     _freezeBoard();
   }
   function _endRound() {
-    console.log(_winner.id, "has won");
+    console.log(_winner.name, "has won");
     _freezeBoard();
     displayController.show(game.nextRoundBtn);
   }
