@@ -31,13 +31,13 @@ const players = (function () {
   const _playerOne = {
     id: "playerOne",
     score: 0,
-    mark: 'X',
+    mark: 'x',
     moves: []
   };
   const _playerTwo = {
     id: "playerTwo",
     score: 0,
-    mark: 'O',
+    mark: 'o',
     moves: []
   }
 
@@ -105,6 +105,20 @@ const displayController = (function (doc) {
   function show(element) {
     if (element.classList.contains("hide")) element.classList.remove("hide");
   }
+  function renderWinningCombo(boardData, combo) {
+    boardData.forEach((mark, index) => {
+      boardData[index] = (combo.includes(index)) ? mark.toUpperCase() : mark;
+    });
+    renderBoard(boardData);
+  }
+  function renderDraw(boardData, currentMark) {
+    boardData.forEach((mark, index) => {
+      if (mark != currentMark) {
+        boardData[index] = "draw";
+      }
+    });
+    renderBoard(boardData);
+  }
 
   return {
     renderBoard,
@@ -112,7 +126,9 @@ const displayController = (function (doc) {
     promptPlayer,
     updateCell,
     hide,
-    show
+    show,
+    renderWinningCombo,
+    renderDraw
   };
 // pass document element as argument to make dependency explicit
 })(document);
@@ -202,6 +218,8 @@ const game = (function (doc, gameBoard, players, displayController) {
     winningCombo.forEach(combo => {
       if (combo.every(num => moves.includes(num))) {
         result = true;
+        let boardData = gameBoard.getBoard();
+        displayController.renderWinningCombo(boardData, combo);
       }
     });
 
@@ -218,6 +236,7 @@ const game = (function (doc, gameBoard, players, displayController) {
   }
   function _drawRound() {
     console.log("DRAW");
+    displayController.renderDraw(gameBoard.getBoard(), _currentPlayer.mark);
     _freezeBoard();
   }
   function _endRound() {
