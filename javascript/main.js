@@ -141,19 +141,19 @@ const game = (function (doc, gameBoard, players, displayController) {
   let _players = players.getPlayers();
   let _currentPlayer;
 
-  function initGame() {
-    _winner = null;
-    players.resetMoves();
-    _currentPlayer = _players[0];
-    gameBoard.setupBoard();
-
-    let boardData = gameBoard.getBoard();
-    displayController.renderBoard(boardData);
-    displayController.displayScore(_players);
-    displayController.hide(game.nextRoundBtn);
-    _getMove();
+  function init() {
+    this.startBtn = doc.getElementById("start-btn");
+    this.popup = doc.querySelector(".popup-container");
+    this.startBtn.addEventListener("click", _initGame);
   }
-  function cacheDom() {
+  function _initGame() {
+    console.log("start");
+    displayController.hide(game.popup);
+    _cacheDom.call(game);
+    _initRound.call(game);
+    _initControls.call(game);
+  }
+  function _cacheDom() {
     this.gameBoard = doc.getElementById("game-board");
     this.restartBtn = doc.getElementById("restart-btn");
     this.nextRoundBtn = doc.getElementById("next-round-btn");
@@ -162,11 +162,22 @@ const game = (function (doc, gameBoard, players, displayController) {
       doc.querySelector("#player-two-score")
     ];
   }
-  function initControls() {
+  function _initRound() {
+    _winner = null;
+    players.resetMoves();
+    _currentPlayer = _players[0];
+    gameBoard.setupBoard();
+
+    displayController.renderBoard(gameBoard.getBoard());
+    displayController.displayScore(_players);
+    displayController.hide(game.nextRoundBtn);
+    _getMove();
+  }
+  function _initControls() {
     // Separate init of controls because reinitialization of controls
     // unnecessary when restarting game / setting up next round
     this.restartBtn.addEventListener("click", _restartGame);
-    this.nextRoundBtn.addEventListener("click", initGame);
+    this.nextRoundBtn.addEventListener("click", _initRound);
   }
   function _getMove() {
     displayController.promptPlayer(_currentPlayer.id);
@@ -253,13 +264,11 @@ const game = (function (doc, gameBoard, players, displayController) {
     console.log("Restarting");
     players.resetScores();
     players.resetMoves();
-    initGame();
+    _initRound();
   }
 
   return {
-    initGame,
-    cacheDom,
-    initControls,
+    init,
     makeMove
   };
 // pass Modules as arguments to make dependency explicit
@@ -267,8 +276,4 @@ const game = (function (doc, gameBoard, players, displayController) {
 
 
 // Init Game with IIFE
-(function () {
-  game.cacheDom();
-  game.initGame();
-  game.initControls();
-})();
+(function () { game.init() })();

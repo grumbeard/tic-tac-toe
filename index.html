@@ -29,11 +29,30 @@
   </main>
   <footer>
     <p>Tic Tac Toe by <a href="https://github.com/grumbeard">@grumbeard</a></p>
-    <p class="text-note">Settling the most untenable disputes since 2021</p>
+    <p class="text-note">resolving some of the most untenable disputes since 2021</p>
     <a href="https://github.com/grumbeard/tic-tac-toe" class="text-note">
       Visit GitHub Repository
     </a>
   </footer>
+  <div class="popup-container">
+    <form id="start-popup" action="#">
+      <div class="content-container">
+        <p class="prompt-text">NAME YOUR STAKES</p>
+      </div>
+      <div class="content-container">
+        <label for="player-one">
+          <input type="text" name="player-one" id="player-one-name" placeholder="FRIED CHICKEN" minlength="1" maxlength="15">
+        </label>
+        <p>vs</p>
+        <label for="player-two">
+          <input type="text" name="player-two" id="player-two-name" placeholder="SALAD" minlength="1" maxlength="15">
+        </label>
+      </div>
+      <div class="content-container">
+        <input type="submit" value="START GAME" id="start-btn" class="btn">
+      </div>
+    </form>
+  </div>
   <script src="javascript/main.js"></script>
 </body>
 </html>
