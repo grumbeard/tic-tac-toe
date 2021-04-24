@@ -92,14 +92,13 @@ const displayController = (function (doc) {
       cell.classList.add("cell");
       cell.dataset["cell"] = index;
       cell.innerText = cellData;
-      cell.addEventListener("click", game.makeMove);
       if (game.gameBoard) game.gameBoard.appendChild(cell);
       index++;
     });
   }
   function updateNames(players) {
-    game.playerNames[0].innerText = players[0].name;
-    game.playerNames[1].innerText = players[1].name;
+    game.playerNames[0].innerText = players[0].name.toUpperCase();
+    game.playerNames[1].innerText = players[1].name.toUpperCase();
   }
   function clearInputs() {
     game.form.elements[id="player-one-name"].value = null;
@@ -204,9 +203,15 @@ const game = (function (doc, gameBoard, players, displayController) {
     gameBoard.setupBoard();
 
     displayController.renderBoard(gameBoard.getBoard());
+    _bindCellEvents();
     displayController.displayScore(_players);
     displayController.hide(game.nextRoundBtn);
     _getMove();
+  }
+  function _bindCellEvents() {
+    game.gameBoard.childNodes.forEach(cell => {
+      cell.addEventListener("click", _makeMove);
+    });
   }
   function _initControls() {
     // Separate init of controls because reinitialization of controls
@@ -217,10 +222,10 @@ const game = (function (doc, gameBoard, players, displayController) {
   function _getMove() {
     displayController.promptPlayer(_currentPlayer);
   }
-  function makeMove(e) {
+  function _makeMove(e) {
     if (!e.target.innerText) {
       let index = parseInt(e.target.dataset.cell);
-      e.target.removeEventListener("click", makeMove);
+      e.target.removeEventListener("click", _makeMove);
 
       gameBoard.addMark(index, _currentPlayer.mark);
       displayController.updateCell(index, _currentPlayer.mark);
@@ -292,7 +297,7 @@ const game = (function (doc, gameBoard, players, displayController) {
   }
   function _freezeBoard() {
     game.gameBoard.childNodes.forEach(cell => {
-      cell.removeEventListener("click", makeMove);
+      cell.removeEventListener("click", _makeMove);
     });
   }
   function _restartGame() {
@@ -303,10 +308,7 @@ const game = (function (doc, gameBoard, players, displayController) {
     displayController.show(game.popup);
   }
 
-  return {
-    init,
-    makeMove
-  };
+  return { init };
 // pass Modules as arguments to make dependency explicit
 })(document, gameBoard, players, displayController);
 
