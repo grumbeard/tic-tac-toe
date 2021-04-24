@@ -7,23 +7,33 @@
   <title>Tic Tac Toe</title>
 </head>
 <body>
+  <header>
+    <h1>Tic Tac Toe</h1>
+  </header>
   <main>
     <div id="game-board"></div>
-    <div id="controls-container">
-      <div id="restart-btn" class="btn">Restart</div>
-      <div id="next-round-btn" class="btn hide">Next Round</div>
-    </div>
     <div id="info-container">
       <div class="player-info-container">
-        <p class="player-name">Player One</p>
+        <p class="player-name"><strong>PLAYER 1</strong></p>
         <p class="player-score" id="player-one-score"></p>
       </div>
       <div class="player-info-container">
-        <p class="player-name">Player Two</p>
+        <p class="player-name"><strong>PLAYER 2</strong></p>
         <p class="player-score" id="player-two-score"></p>
       </div>
     </div>
+    <div id="controls-container">
+      <div id="restart-btn" class="btn">RESTART</div>
+      <div id="next-round-btn" class="btn hide">NEXT ROUND</div>
+    </div>
   </main>
+  <footer>
+    <p>Tic Tac Toe by <a href="https://github.com/grumbeard">@grumbeard</a></p>
+    <p class="text-note">Settling the most untenable disputes since 2021</p>
+    <a href="https://github.com/grumbeard/tic-tac-toe" class="text-note">
+      Visit GitHub Repository
+    </a>
+  </footer>
   <script src="javascript/main.js"></script>
 </body>
 </html>
