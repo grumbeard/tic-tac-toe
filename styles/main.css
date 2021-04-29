@@ -161,7 +161,7 @@ footer {
 
 
 /* POPUP FORM */
-.popup-container {
+#popup-container {
   position: fixed;
   top: 15vh;
   left: 50%;
@@ -213,6 +213,6 @@ input[type="text"] {
 /* GENERAL EFFECTS */
 
 .hide {
-  display: none;
+  display: none !important;
 }
 

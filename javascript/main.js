@@ -1,20 +1,3 @@
-// Player Prototype
-// Responsibility: Define avaiable player behavior
-const playerPrototype = {
-  resetMoves: function () {
-    this.moves = [];
-  },
-  resetScore: function () {
-    this.score = 0;
-  },
-  addPoints: function (points) {
-    this.score += points;
-  },
-  logMove: function (move) {
-    this.moves.push(move);
-  }
-};
-
 // Player Factory
 // Responsibility: Generate Player instances
 // (Each Player) Has Knowledge Of: Player Mark, Player Moves
@@ -29,13 +12,39 @@ const createPlayer = (id, mark) => {
   player.moves = [];
 
   return player;
+
 };
+
+// Player Prototype
+// Responsibility: Define avaiable player behavior
+const playerPrototype = {
+
+  resetMoves: function () {
+    this.moves = [];
+  },
+
+  resetScore: function () {
+    this.score = 0;
+  },
+
+  addPoints: function (points) {
+    this.score += points;
+  },
+
+  logMove: function (move) {
+    this.moves.push(move);
+  }
+
+};
+
+
 
 
 // Gameboard Module
 // Responsibility: Manage access and changes to Game Board states
 // Has Knowledge Of: Marks on Game Board
 const gameBoard = (function () {
+
   let _boardSize = 3;
   let _gameBoard;
 
@@ -53,14 +62,16 @@ const gameBoard = (function () {
       }
     }
   }
+
   function getBoard() {
     return _gameBoard;
   }
+
   function addMark(row, column, mark) {
-    let celltoUpdate = _gameBoard.find(cell => {
+    let cell = _gameBoard.find(cell => {
       return cell.row == row && cell.column == column;
     });
-    celltoUpdate.mark = mark;
+    cell.mark = mark;
   }
 
 
@@ -69,136 +80,151 @@ const gameBoard = (function () {
     getBoard,
     addMark
   };
+
 })();
+
+
 
 
 // Display Controller Module
 // Responsibility: Render and manage changes to interface
 // Has Knowledge Of: DOM objects, Interface Design
 const displayController = (function (doc) {
-  // public variables
-  const dom = {
-    gameBoard: null,
-    restartBtn: null,
-    nextRoundBtn: null,
-  };
 
-  // private variables
-  let _playerScores;
+  const _popup = doc.getElementById("popup-container");
+  const _form = doc.getElementById("start-popup");
+  const _gameBoard = doc.getElementById("game-board");
+  const _restartBtn = doc.getElementById("restart-btn");
+  const _nextRoundBtn = doc.getElementById("next-round-btn");
+  const _playerNames = doc.getElementsByClassName("player-name");
+  const _playerScores = doc.getElementsByClassName("player-score");
 
 
-  function initPopup() {
-    // These temporary properties will be removed after game start
-    dom.form = doc.getElementById("start-popup");
-    dom.popup = doc.querySelector(".popup-container");
-    _show(dom.popup);
+  function init() {
+    // Run what doesn't need to be repeated when restarting game
+    _show(_popup);
+    _form.addEventListener("submit", gameController.initGame);
+    _restartBtn.addEventListener("click", gameController.restartGame);
+    _nextRoundBtn.addEventListener("click", gameController.startRound);
   }
+
   function renderStartGame(playersData) {
-    _hide(dom.popup);
-    _cacheDom();
+    // Run what doesn't need to be repeated when starting new round
+    _hide(_popup);
     _updateNames(playersData);
     _displayScore(playersData);
     _clearInputs();
+  }
 
-    // Remove unnecessary DOM caches
-    delete dom.form;
-    delete dom.popup;
-    delete dom._playerNames;
+  function renderStartRound() {
+    // Run only what is necessary when setting up new round
+    _hide(_nextRoundBtn);
+    _gameBoard.innerHTML = "";
+    _renderBoard();
   }
-  function _updateNames(playersData) {
-    let inputs = dom.form.elements;
-    playersData[0].name = inputs["player-one-name-input"].value || "PLAYER 1";
-    playersData[1].name = inputs["player-two-name-input"].value || "PLAYER 2";
 
-    // This temporary property will be removed after game start
-    dom.playerNames = [
-      doc.getElementById("player-one-name"),
-      doc.getElementById("player-two-name")
-    ];
-    dom.playerNames[0].innerText = playersData[0].name.toUpperCase();
-    dom.playerNames[1].innerText = playersData[1].name.toUpperCase();
+  function renderRestartGame() {
+    _show(_popup);
   }
-  function _cacheDom() {
-    dom.gameBoard = doc.getElementById("game-board");
-    dom.restartBtn = doc.getElementById("restart-btn");
-    dom.nextRoundBtn = doc.getElementById("next-round-btn");
-    _playerScores = [
-      doc.getElementById("player-one-score"),
-      doc.getElementById("player-two-score")
-    ];
-  }
-  function renderStartRound(boardData) {
-    // Clear board of existing moves
-    _hide(dom.nextRoundBtn);
-    dom.gameBoard.innerHTML = "";
 
-    boardData.forEach(cellData => {
-      let cell = doc.createElement("div");
-      cell.classList.add("cell");
-      cell.dataset["row"] = cellData.row;
-      cell.dataset["column"] = cellData.column;
-      cell.innerText = cellData.mark;
-      dom.gameBoard.appendChild(cell);
-    });
-  }
-  function _clearInputs() {
-    dom.form.elements["player-one-name-input"].value = null;
-    dom.form.elements["player-one-name-input"].value = null;
-  }
-  function _displayScore(playersData) {
-    _playerScores[0].innerText = playersData[0].score;
-    _playerScores[1].innerText = playersData[1].score;
-  }
-  function updateCell(row, column, mark) {
-    let cell = [...dom.gameBoard.children].find(cell => {
-      return (cell.dataset.row == row) && (cell.dataset.column == column);
-    });
-    cell.innerText = mark;
-  }
-  function _hide(element) {
-    if (!element.classList.contains("hide")) element.classList.add("hide");
-  }
-  function _show(element) {
-    if (element.classList.contains("hide")) element.classList.remove("hide");
-  }
-  function renderWinningCombo(boardData, combo, winningMark) {
-    combo.forEach(move => {
+  function renderWin(winningMark) {
+    game.getWinningCombo().forEach(move => {
       updateCell(move.row, move.column, winningMark.toUpperCase());
     });
   }
-  function renderDraw(boardData, currentMark) {
-    boardData.forEach(cell => {
+
+  function renderDraw(currentMark) {
+    _freezeBoard();
+    gameBoard.getBoard().forEach(cell => {
       if (cell.mark != currentMark) {
-        cell.mark = "draw";
+        updateCell(cell.row, cell.column, "draw");
       }
     });
-    renderStartRound(boardData);
-    _show(dom.nextRoundBtn);
+    _show(_nextRoundBtn);
   }
+
   function renderEnd(playersData) {
+    _freezeBoard();
     _displayScore(playersData);
-    _show(dom.nextRoundBtn);
+    _show(_nextRoundBtn);
+  }
+
+  function _renderBoard() {
+    gameBoard.getBoard().forEach(cell => {
+      let cellElement = doc.createElement("div");
+      cellElement.classList.add("cell");
+      cellElement.dataset["row"] = cell.row;
+      cellElement.dataset["column"] = cell.column;
+      cellElement.innerText = cell.mark;
+      cellElement.addEventListener("click", gameController.makeMove);
+      _gameBoard.appendChild(cellElement);
+    });
+  }
+
+  function updateCell(row, column, mark) {
+    let cell = [..._gameBoard.children].find(cell => {
+      return (cell.dataset.row == row) && (cell.dataset.column == column);
+    });
+    cell.innerText = mark;
+    // Freeze cell
+    cell.removeEventListener("click", gameController.makeMove);
+  }
+
+  function _updateNames(playersData) {
+    playersData.forEach((player, i) => {
+      player.name = _form.elements[`player-${i+1}-name-input`].value || `PLAYER ${i+1}`
+      _playerNames[i].innerText = player.name.toUpperCase();
+    });
+  }
+
+  function _displayScore(playersData) {
+    playersData.forEach((player, i) => {
+      _playerScores[i].innerText = player.score;
+    });
+  }
+
+  function _clearInputs() {
+    for (let i = 0; i < _playerNames.length; i++) {
+      _form.elements[`player-${i+1}-name-input`].value = null;
+    }
+  }
+
+  function _hide(element) {
+    if (!element.classList.contains("hide")) element.classList.add("hide");
+  }
+
+  function _show(element) {
+    if (element.classList.contains("hide")) element.classList.remove("hide");
+  }
+
+  function _freezeBoard() {
+    _gameBoard.childNodes.forEach(cell => {
+      cell.removeEventListener("click", gameController.makeMove);
+    });
   }
 
 
   return {
-    initPopup,
+    init,
     renderStartGame,
+    renderRestartGame,
     renderStartRound,
     updateCell,
-    renderWinningCombo,
+    renderWin,
     renderDraw,
-    renderEnd,
-    dom
+    renderEnd
   };
-// pass document element as argument to make dependency explicit
+
 })(document);
+
+
 
 
 // Game Module
 // Responsibility: Define Gameplay Logic
 // Has Knowledge Of: Win Scenarios, Gameplay Logic
 const game = (function () {
+
   let _winningCombo = null;
   const _winningCombos = [
       [{row: 0, column: 0}, {row: 0, column: 1}, {row: 0, column: 2}],
@@ -224,6 +250,7 @@ const game = (function () {
     }
     return result;
   }
+
   function _isWinningCombination(moves) {
     let result = false;
     _winningCombos.forEach(combo => {
@@ -242,9 +269,11 @@ const game = (function () {
 
     return result;
   }
+
   function checkMovesEqual(move1, move2) {
-    if (move1.row == move2.row && move1.column == move2.column) return true;
+    return (move1.row == move2.row && move1.column == move2.column);
   }
+
   function getWinningCombo() {
     return _winningCombo;
   }
@@ -254,7 +283,7 @@ const game = (function () {
     evaluateMoves,
     getWinningCombo
   };
-// pass Modules as arguments to make dependency explicit
+
 })();
 
 
@@ -262,65 +291,49 @@ const game = (function () {
 // Game Controller Module
 // Responsibility: Implement Gameplay Logic
 // Has Knowledge Of: Gameplay Logic, States in other Modules
-const gameController = (function (gameBoard, createPlayer, displayController) {
+const gameController = (function () {
+
   let _playerCount = 2;
   let _players = [];
   let _currentPlayer;
-  let _gameBoard;
   let _winner;
 
 
   function initGame(e) {
     e.preventDefault();
-
     _initPlayers();
     displayController.renderStartGame(_players);
-
-    _initControls();
-    _initRound();
+    startRound();
   }
+
   function _initPlayers() {
     let _marks = ["x", "o"]
+    _players = [];
     for (let i = 0; i < _playerCount; i++) {
       _players.push(createPlayer(i, _marks[i]));
     }
   }
-  function _initGameBoard() {
-    gameBoard.resetBoard();
-    _gameBoard = gameBoard.getBoard();
-  }
-  function _initRound() {
-    _initGameBoard();
+
+  function startRound() {
     _players.forEach(player => player.resetMoves());
     _currentPlayer = _players[0];
     _winner = null;
-    displayController.renderStartRound(_gameBoard);
-    _initGameBoardSensors();
+    gameBoard.resetBoard();
+    displayController.renderStartRound();
   }
-  function _initGameBoardSensors() {
-    displayController.dom.gameBoard.childNodes.forEach(cell => {
-      cell.addEventListener("click", _makeMove);
-    });
-  }
-  function _initControls() {
-    // Separate init of controls because reinitialization of controls
-    // unnecessary when restarting game / setting up next round
-    displayController.dom.restartBtn.addEventListener("click", _restartGame);
-    displayController.dom.nextRoundBtn.addEventListener("click", _initRound);
-  }
-  function _restartGame() {
+
+  function restartGame() {
     _players.forEach(player => player.resetScore());
     _players.forEach(player => player.resetMoves());
 
-    displayController.initPopup();
+    displayController.renderRestartGame();
   }
-  function _makeMove(e) {
+
+  function makeMove(e) {
     // Mark game board only if no mark exists for cell
     if (!e.target.innerText) {
       let row = parseInt(e.target.dataset.row);
       let column = parseInt(e.target.dataset.column);
-      // Freeze cell
-      e.target.removeEventListener("click", _makeMove);
 
       gameBoard.addMark(row, column, _currentPlayer.mark);
       displayController.updateCell(row, column, _currentPlayer.mark);
@@ -328,6 +341,7 @@ const gameController = (function (gameBoard, createPlayer, displayController) {
       _handleOutcome();
     }
   }
+
   function _handleOutcome() {
     let outcome = game.evaluateMoves(_currentPlayer.moves);
 
@@ -342,38 +356,39 @@ const gameController = (function (gameBoard, createPlayer, displayController) {
       default:
         _switchCurrentPlayer();
     }
-
   }
+
   function _makeWinner(player) {
     _winner = player;
     player.addPoints(1);
-    displayController.renderWinningCombo(_gameBoard, game.getWinningCombo(), _currentPlayer.mark);
+    displayController.renderWin(_currentPlayer.mark);
     _endRound();
   }
+
   function _drawRound() {
-    _freezeBoard();
-    displayController.renderDraw(_gameBoard, _currentPlayer.mark);
+    displayController.renderDraw(_currentPlayer.mark);
   }
+
   function _endRound() {
-    _freezeBoard();
     displayController.renderEnd(_players);
   }
+
   function _switchCurrentPlayer() {
     _currentPlayer = (_currentPlayer == _players[0]) ? _players[1] : _players[0];
   }
-  function _freezeBoard() {
-    displayController.dom.gameBoard.childNodes.forEach(cell => {
-      cell.removeEventListener("click", _makeMove);
-    });
-  }
 
 
+  return {
+    initGame,
+    startRound,
+    makeMove,
+    restartGame
+  };
 
-  return { initGame };
-})(gameBoard, createPlayer, displayController);
+})();
+
 
 
 
 // Get user input for player names
-displayController.initPopup();
-displayController.dom.form.addEventListener("submit", gameController.initGame);
+displayController.init();
