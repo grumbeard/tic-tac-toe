@@ -44,17 +44,23 @@ const gameBoard = (function () {
     // Empty existing gameboard if exists
     _gameBoard = [];
     for (let i = 0; i < _boardSize; i++) {
-      _gameBoard[i] = [];
       for (let j = 0; j < _boardSize; j++) {
-        _gameBoard[i].push(null);
+        _gameBoard.push({
+          row: i,
+          column: j,
+          mark: null
+        });
       }
     }
   }
   function getBoard() {
     return _gameBoard;
   }
-  function addMark(rowIndex, columnIndex, mark) {
-    _gameBoard[rowIndex].splice(columnIndex, 1, mark);
+  function addMark(row, column, mark) {
+    let celltoUpdate = _gameBoard.find(cell => {
+      return cell.row == row && cell.column == column;
+    });
+    celltoUpdate.mark = mark;
   }
 
 
@@ -126,19 +132,13 @@ const displayController = (function (doc) {
     _hide(dom.nextRoundBtn);
     dom.gameBoard.innerHTML = "";
 
-    let rowIndex = 0;
-    boardData.forEach(rowData => {
-      let columnIndex = 0;
-      rowData.forEach(cellData => {
-        let cell = doc.createElement("div");
-        cell.classList.add("cell");
-        cell.dataset["row"] = rowIndex;
-        cell.dataset["column"] = columnIndex;
-        cell.innerText = cellData;
-        dom.gameBoard.appendChild(cell);
-        columnIndex++;
-      })
-      rowIndex++;
+    boardData.forEach(cellData => {
+      let cell = doc.createElement("div");
+      cell.classList.add("cell");
+      cell.dataset["row"] = cellData.row;
+      cell.dataset["column"] = cellData.column;
+      cell.innerText = cellData.mark;
+      dom.gameBoard.appendChild(cell);
     });
   }
   function _clearInputs() {
@@ -149,9 +149,9 @@ const displayController = (function (doc) {
     _playerScores[0].innerText = playersData[0].score;
     _playerScores[1].innerText = playersData[1].score;
   }
-  function updateCell(rowIndex, columnIndex, mark) {
+  function updateCell(row, column, mark) {
     let cell = [...dom.gameBoard.children].find(cell => {
-      return (cell.dataset.row == rowIndex) && (cell.dataset.column == columnIndex);
+      return (cell.dataset.row == row) && (cell.dataset.column == column);
     });
     cell.innerText = mark;
   }
@@ -163,17 +163,14 @@ const displayController = (function (doc) {
   }
   function renderWinningCombo(boardData, combo, winningMark) {
     combo.forEach(move => {
-      boardData[move[0]][move[1]] = winningMark.toUpperCase();
+      updateCell(move.row, move.column, winningMark.toUpperCase());
     });
-    renderStartRound(boardData);
   }
   function renderDraw(boardData, currentMark) {
-    boardData.forEach(row => {
-      row.forEach((mark, columnIndex) => {
-        if (mark != currentMark) {
-          row[columnIndex] = "draw";
-        }
-      });
+    boardData.forEach(cell => {
+      if (cell.mark != currentMark) {
+        cell.mark = "draw";
+      }
     });
     renderStartRound(boardData);
     _show(dom.nextRoundBtn);
@@ -204,14 +201,14 @@ const displayController = (function (doc) {
 const game = (function () {
   let _winningCombo = null;
   const _winningCombos = [
-      [[0,0], [0,1], [0,2]],
-      [[1,0], [1,1], [1,2]],
-      [[2,0], [2,1], [2,2]],
-      [[0,0], [1,0], [2,0]],
-      [[0,1], [1,1], [2,1]],
-      [[0,2], [1,2], [2,2]],
-      [[0,0], [1,1], [2,2]],
-      [[0,2], [1,1], [2,0]]
+      [{row: 0, column: 0}, {row: 0, column: 1}, {row: 0, column: 2}],
+      [{row: 1, column: 0}, {row: 1, column: 1}, {row: 1, column: 2}],
+      [{row: 2, column: 0}, {row: 2, column: 1}, {row: 2, column: 2}],
+      [{row: 0, column: 0}, {row: 1, column: 0}, {row: 2, column: 0}],
+      [{row: 0, column: 1}, {row: 1, column: 1}, {row: 2, column: 1}],
+      [{row: 0, column: 2}, {row: 1, column: 2}, {row: 2, column: 2}],
+      [{row: 0, column: 0}, {row: 1, column: 1}, {row: 2, column: 2}],
+      [{row: 0, column: 2}, {row: 1, column: 1}, {row: 2, column: 0}]
     ];
 
 
@@ -233,7 +230,7 @@ const game = (function () {
       // Check if each move in this winning combo can be found in player's moves
       let comboMatch = combo.every(comboMove => {
         return moves.some(playerMove => {
-          return checkArraysEqual(comboMove, playerMove);
+          return checkMovesEqual(comboMove, playerMove);
         });
       });
 
@@ -245,13 +242,8 @@ const game = (function () {
 
     return result;
   }
-  function checkArraysEqual(arr1, arr2) {
-    if (arr1.length != arr2.length) return false;
-    // Check if array elements are equal and in same order
-    for (let i = 0; i < arr1.length; i++) {
-      if (arr1[i] != arr2[i]) return false;
-    }
-    return true;
+  function checkMovesEqual(move1, move2) {
+    if (move1.row == move2.row && move1.column == move2.column) return true;
   }
   function getWinningCombo() {
     return _winningCombo;
@@ -332,7 +324,7 @@ const gameController = (function (gameBoard, createPlayer, displayController) {
 
       gameBoard.addMark(row, column, _currentPlayer.mark);
       displayController.updateCell(row, column, _currentPlayer.mark);
-      _currentPlayer.logMove([row, column]);
+      _currentPlayer.logMove({ row: row, column: column });
       _handleOutcome();
     }
   }
