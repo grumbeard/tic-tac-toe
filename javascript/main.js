@@ -10,6 +10,7 @@ const createPlayer = (id, mark) => {
   player.score = 0;
   player.mark = mark;
   player.moves = [];
+  player.isComputer = false;
 
   return player;
 
@@ -33,6 +34,10 @@ const playerPrototype = {
 
   logMove: function (move) {
     this.moves.push(move);
+  },
+
+  makeComputer: function () {
+    this.isComputer = true;
   }
 
 };
@@ -96,6 +101,7 @@ const displayController = (function (doc) {
   const _gameBoard = doc.getElementById("game-board");
   const _restartBtn = doc.getElementById("restart-btn");
   const _nextRoundBtn = doc.getElementById("next-round-btn");
+  const _computerBtn = doc.getElementById("computer-btn");
   const _playerNames = doc.getElementsByClassName("player-name");
   const _playerScores = doc.getElementsByClassName("player-score");
 
@@ -104,6 +110,7 @@ const displayController = (function (doc) {
     // Run what doesn't need to be repeated when restarting game
     _show(_popup);
     _form.addEventListener("submit", gameController.initGame);
+    _computerBtn.addEventListener("click", gameController.initWithComputer);
     _restartBtn.addEventListener("click", gameController.restartGame);
     _nextRoundBtn.addEventListener("click", gameController.startRound);
   }
@@ -156,7 +163,7 @@ const displayController = (function (doc) {
       cellElement.dataset["row"] = cell.row;
       cellElement.dataset["column"] = cell.column;
       cellElement.innerText = cell.mark;
-      cellElement.addEventListener("click", gameController.makeMove);
+      cellElement.addEventListener("click", gameController.handlePlayerMove);
       _gameBoard.appendChild(cellElement);
     });
   }
@@ -329,17 +336,15 @@ const gameController = (function () {
     displayController.renderRestartGame();
   }
 
-  function makeMove(e) {
+  function _makeMove(move) {
     // Mark game board only if no mark exists for cell
-    if (!e.target.innerText) {
-      let row = parseInt(e.target.dataset.row);
-      let column = parseInt(e.target.dataset.column);
+    let row = move.row;
+    let column = move.column;
 
-      gameBoard.addMark(row, column, _currentPlayer.mark);
-      displayController.updateCell(row, column, _currentPlayer.mark);
-      _currentPlayer.logMove({ row: row, column: column });
-      _handleOutcome();
-    }
+    gameBoard.addMark(row, column, _currentPlayer.mark);
+    displayController.updateCell(row, column, _currentPlayer.mark);
+    _currentPlayer.logMove({ row: row, column: column });
+    _handleOutcome();
   }
 
   function _handleOutcome() {
@@ -355,6 +360,7 @@ const gameController = (function () {
       // Else make it other player's turn
       default:
         _switchCurrentPlayer();
+        if (_currentPlayer.isComputer) _handleComputerMove(_currentPlayer);
     }
   }
 
@@ -377,12 +383,35 @@ const gameController = (function () {
     _currentPlayer = (_currentPlayer == _players[0]) ? _players[1] : _players[0];
   }
 
+  function initWithComputer(e) {
+    initGame(e);
+    _players[1].makeComputer();
+  }
+
+  function handlePlayerMove(e) {
+    if (!e.target.innerText) {
+      let row = parseInt(e.target.dataset.row);
+      let column = parseInt(e.target.dataset.column);
+      _makeMove({ row: row, column: column });
+    }
+  }
+
+  function _handleComputerMove(computer) {
+    let cells = gameBoard.getBoard().filter(cell => !cell.mark);
+    let cell = cells[Math.floor(Math.random() * (cells.length + 1))];
+
+    let row = cell.row;
+    let column = cell.column;
+    _makeMove({ row: row, column: column })
+  }
+
 
   return {
     initGame,
     startRound,
-    makeMove,
-    restartGame
+    restartGame,
+    initWithComputer,
+    handlePlayerMove
   };
 
 })();
