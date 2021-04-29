@@ -1,33 +1,34 @@
+// Player Prototype
+// Responsibility: Define avaiable player behavior
+const playerPrototype = {
+  resetMoves: function () {
+    this.moves = [];
+  },
+  resetScore: function () {
+    this.score = 0;
+  },
+  addPoints: function (points) {
+    this.score += points;
+  },
+  logMove: function (move) {
+    this.moves.push(move);
+  }
+};
+
 // Player Factory
 // Responsibility: Generate Player instances
 // (Each Player) Has Knowledge Of: Player Mark, Player Moves
-const playerFactory = (id, mark) => {
-  // const person = Object.create(player.prototype);
+const createPlayer = (id, mark) => {
 
-  function resetMoves() {
-    this.moves = [];
-  }
-  function resetScore() {
-    this.score = 0;
-  }
-  function addPoints(points) {
-    this.score += points;
-  }
-  function logMove(move) {
-    this.moves.push(move);
-  }
+  const player = Object.create(playerPrototype);
 
-  return {
-    id: id,
-    name: null,
-    score: 0,
-    mark: mark,
-    moves: [],
-    resetMoves,
-    resetScore,
-    addPoints,
-    logMove
-  };
+  player.id = id;
+  player.name = null;
+  player.score = 0;
+  player.mark = mark;
+  player.moves = [];
+
+  return player;
 };
 
 
@@ -100,8 +101,8 @@ const displayController = (function (doc) {
   }
   function _updateNames(playersData) {
     let inputs = dom.form.elements;
-    playersData[0].name = inputs["player-one"].value || "PLAYER 1";
-    playersData[1].name = inputs["player-two"].value || "PLAYER 2";
+    playersData[0].name = inputs["player-one-name-input"].value || "PLAYER 1";
+    playersData[1].name = inputs["player-two-name-input"].value || "PLAYER 2";
 
     // This temporary property will be removed after game start
     dom.playerNames = [
@@ -141,8 +142,8 @@ const displayController = (function (doc) {
     });
   }
   function _clearInputs() {
-    dom.form.elements["player-one"].value = null;
-    dom.form.elements["player-two"].value = null;
+    dom.form.elements["player-one-name-input"].value = null;
+    dom.form.elements["player-one-name-input"].value = null;
   }
   function _displayScore(playersData) {
     _playerScores[0].innerText = playersData[0].score;
@@ -269,7 +270,7 @@ const game = (function () {
 // Game Controller Module
 // Responsibility: Implement Gameplay Logic
 // Has Knowledge Of: Gameplay Logic, States in other Modules
-const gameController = (function (gameBoard, playerFactory, displayController) {
+const gameController = (function (gameBoard, createPlayer, displayController) {
   let _playerCount = 2;
   let _players = [];
   let _currentPlayer;
@@ -289,7 +290,7 @@ const gameController = (function (gameBoard, playerFactory, displayController) {
   function _initPlayers() {
     let _marks = ["x", "o"]
     for (let i = 0; i < _playerCount; i++) {
-      _players.push(playerFactory(i, _marks[i]));
+      _players.push(createPlayer(i, _marks[i]));
     }
   }
   function _initGameBoard() {
@@ -377,7 +378,7 @@ const gameController = (function (gameBoard, playerFactory, displayController) {
 
 
   return { initGame };
-})(gameBoard, playerFactory, displayController);
+})(gameBoard, createPlayer, displayController);
 
 
 
