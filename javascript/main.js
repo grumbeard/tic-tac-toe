@@ -1,6 +1,8 @@
-// Player Factory
-// Responsibility: Generate Player instances
-// (Each Player) Has Knowledge Of: Player Mark, Player Moves
+/*
+  Player Factory
+  -  Responsibility: Generate Player instances
+  -  (Each Player) Has Knowledge Of: Player Mark, Player Moves
+*/
 const createPlayer = (id, mark) => {
 
   const player = Object.create(playerPrototype);
@@ -16,8 +18,10 @@ const createPlayer = (id, mark) => {
 
 };
 
-// Player Prototype
-// Responsibility: Define avaiable player behavior
+/*
+  Player Prototype
+  - Responsibility: Define avaiable player behavior
+*/
 const playerPrototype = {
 
   resetMoves: function () {
@@ -45,9 +49,11 @@ const playerPrototype = {
 
 
 
-// Gameboard Module
-// Responsibility: Manage access and changes to Game Board states
-// Has Knowledge Of: Marks on Game Board
+/*
+  Gameboard Module
+  -  Responsibility: Manage access and changes to Game Board states
+  -  Has Knowledge Of: Marks on Game Board
+*/
 const gameBoard = (function () {
 
   let _boardSize = 3;
@@ -91,9 +97,11 @@ const gameBoard = (function () {
 
 
 
-// Display Controller Module
-// Responsibility: Render and manage changes to interface
-// Has Knowledge Of: DOM objects, Interface Design
+/*
+  Display Controller Module
+  -  Responsibility: Render and manage changes to interface
+  -  Has Knowledge Of: DOM objects, Interface Design
+*/
 const displayController = (function (doc) {
 
   const _popup = doc.getElementById("popup-container");
@@ -174,7 +182,7 @@ const displayController = (function (doc) {
     });
     cell.innerText = mark;
     // Freeze cell
-    cell.removeEventListener("click", gameController.makeMove);
+    cell.removeEventListener("click", gameController.handlePlayerMove);
   }
 
   function _updateNames(playersData) {
@@ -206,7 +214,7 @@ const displayController = (function (doc) {
 
   function _freezeBoard() {
     _gameBoard.childNodes.forEach(cell => {
-      cell.removeEventListener("click", gameController.makeMove);
+      cell.removeEventListener("click", gameController.handlePlayerMove);
     });
   }
 
@@ -227,9 +235,11 @@ const displayController = (function (doc) {
 
 
 
-// Game Module
-// Responsibility: Define Gameplay Logic
-// Has Knowledge Of: Win Scenarios, Gameplay Logic
+/*
+  Game Module
+  -  Responsibility: Define Gameplay Logic
+  -  Has Knowledge Of: Win Scenarios, Gameplay Logic
+*/
 const game = (function () {
 
   let _winningCombo = null;
@@ -295,9 +305,11 @@ const game = (function () {
 
 
 
-// Game Controller Module
-// Responsibility: Implement Gameplay Logic
-// Has Knowledge Of: Gameplay Logic, States in other Modules
+/*
+  Game Controller Module
+  -  Responsibility: Implement Gameplay Logic
+  -  Has Knowledge Of: Gameplay Logic, States in other Modules
+*/
 const gameController = (function () {
 
   let _playerCount = 2;
@@ -344,6 +356,7 @@ const gameController = (function () {
     gameBoard.addMark(row, column, _currentPlayer.mark);
     displayController.updateCell(row, column, _currentPlayer.mark);
     _currentPlayer.logMove({ row: row, column: column });
+
     _handleOutcome();
   }
 
@@ -360,6 +373,7 @@ const gameController = (function () {
       // Else make it other player's turn
       default:
         _switchCurrentPlayer();
+        // If next player is computer, automate next move
         if (_currentPlayer.isComputer) _handleComputerMove(_currentPlayer);
     }
   }
@@ -397,12 +411,100 @@ const gameController = (function () {
   }
 
   function _handleComputerMove(computer) {
+    // Get action space: remaining cells
     let cells = gameBoard.getBoard().filter(cell => !cell.mark);
-    let cell = cells[Math.floor(Math.random() * (cells.length + 1))];
+    cells = cells.map(cell => {
+      return { row: cell.row, column: cell.column };
+    });
+    // Get reference to other player
+    let otherPlayer = (computer == _players[0]) ? _players[1] : _players[0];
 
-    let row = cell.row;
-    let column = cell.column;
-    _makeMove({ row: row, column: column })
+    // Evaluate best move for computer and play move
+    let bestMove = _getBestMove(cells, computer, otherPlayer);
+    _makeMove({ row: bestMove.row, column: bestMove.column });
+  }
+
+  function _getBestMove(options, player, otherPlayer) {
+    let bestMove;
+    let bestScore = -Infinity;
+    let maximize = false;
+
+      // Make clone of moves played so far for each player
+    let playerMoves = player.moves.map(move => {
+      return { row: move.row, column: move.column };
+    });
+    let otherMoves = otherPlayer.moves.map(move => {
+      return { row: move.row, column: move.column };
+    });
+
+    // Find next move that will maximize player's chances of winning
+    options.forEach(option => {
+      let remainingOptions = options.filter(cell => cell != option);
+      let score = _getTerminalScore(option, remainingOptions, playerMoves.concat(option), otherMoves, maximize);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = option;
+      }
+    });
+
+    return bestMove;
+  }
+
+  function _getTerminalScore(move, remainingOptions, playerMoves, otherMoves, maximize) {
+    const terminalScores = {
+      win: 1,
+      draw: 0,
+      lose: -1
+    }
+
+    // Get static outcome of move
+    let outcome = _getTerminalOutcome(playerMoves, otherMoves);;
+
+    // BASE CASE: static outcome is WIN or DRAW
+    if (outcome != null) {
+      return terminalScores[outcome];
+    } else {
+      // NON-BASE CASE: static outcome inconclusive, need to increase depth of game tree
+      if (maximize) {
+        // Return score of next move with highest score
+        let maxScore = -2;
+
+        remainingOptions.forEach(option => {
+          let nextOptions = remainingOptions.filter(cell => cell != option);
+          let score = _getTerminalScore(option, nextOptions, playerMoves, otherMoves.concat(move), !maximize);
+
+          if (score > maxScore) {
+            maxScore = score;
+          }
+        });
+
+        return maxScore;
+      } else {
+        // Return score of next move with lowest score
+        let minScore = 2;
+
+        remainingOptions.forEach(option => {
+          let nextOptions = remainingOptions.filter(cell => cell != option);
+          let score = _getTerminalScore(option, nextOptions, playerMoves.concat(move), otherMoves, !maximize);
+
+          if (score < minScore) {
+            minScore = score;
+          }
+        });
+
+        return minScore;
+      }
+    }
+  }
+
+  function _getTerminalOutcome(playerMoves, otherMoves) {
+    let outcome = game.evaluateMoves(playerMoves);
+    if (outcome == null) {
+      // Check if other player has won
+      if (game.evaluateMoves(otherMoves) == "win") return "lose";
+    }
+
+    return outcome;
   }
 
 
