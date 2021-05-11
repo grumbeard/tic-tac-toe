@@ -109,7 +109,6 @@ const displayController = (function (doc) {
   const _gameBoard = doc.getElementById("game-board");
   const _restartBtn = doc.getElementById("restart-btn");
   const _nextRoundBtn = doc.getElementById("next-round-btn");
-  const _computerBtn = doc.getElementById("computer-btn");
   const _playerNames = doc.getElementsByClassName("player-name");
   const _playerScores = doc.getElementsByClassName("player-score");
 
@@ -118,7 +117,6 @@ const displayController = (function (doc) {
     // Run what doesn't need to be repeated when restarting game
     _show(_popup);
     _form.addEventListener("submit", gameController.initGame);
-    _computerBtn.addEventListener("click", gameController.initWithComputer);
     _restartBtn.addEventListener("click", gameController.restartGame);
     _nextRoundBtn.addEventListener("click", gameController.startRound);
   }
@@ -321,6 +319,12 @@ const gameController = (function () {
   function initGame(e) {
     e.preventDefault();
     _initPlayers();
+    if (e.target.elements["player-1-computer"].checked) {
+      _players[0].makeComputer();
+    }
+    if (e.target.elements["player-2-computer"].checked) {
+      _players[1].makeComputer();
+    }
     displayController.renderStartGame(_players);
     startRound();
   }
@@ -339,6 +343,7 @@ const gameController = (function () {
     _winner = null;
     gameBoard.resetBoard();
     displayController.renderStartRound();
+    if (_currentPlayer.isComputer) _handleComputerMove(_currentPlayer);
   }
 
   function restartGame() {
@@ -395,11 +400,6 @@ const gameController = (function () {
 
   function _switchCurrentPlayer() {
     _currentPlayer = (_currentPlayer == _players[0]) ? _players[1] : _players[0];
-  }
-
-  function initWithComputer(e) {
-    initGame(e);
-    _players[1].makeComputer();
   }
 
   function handlePlayerMove(e) {
@@ -512,7 +512,6 @@ const gameController = (function () {
     initGame,
     startRound,
     restartGame,
-    initWithComputer,
     handlePlayerMove
   };
 
