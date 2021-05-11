@@ -39,14 +39,26 @@
       <div class="content-container">
         <p class="prompt-text">NAME YOUR STAKES</p>
       </div>
-      <div class="content-container">
-        <label for="player-1-name-input">
-          <input type="text" name="player-1-name-input" id="player-1-name-input" placeholder="FRIED CHICKEN" minlength="1" maxlength="15">
-        </label>
-        <p>vs</p>
-        <label for="player-2-name-input">
-          <input type="text" name="player-2-name-input" id="player-2-name-input" placeholder="SALAD" minlength="1" maxlength="15">
-        </label>
+      <div id="name-inputs-container">
+        <div class="content-container name-input-container">
+          <label for="player-1-name-input">
+            <input type="text" name="player-1-name-input" id="player-1-name-input" placeholder="FRIED CHICKEN" minlength="1" maxlength="15">
+          </label>
+          <label for="player-1-computer">
+            <input type="checkbox" name="player-1-computer" id="player-1-computer" class="computer-checkbox">
+            <span class="computer-btn" data-player="0">🤖</span>
+          </label>
+        </div>
+          <p>vs</p>
+        <div class="content-container name-input-container">
+          <label for="player-2-name-input">
+            <input type="text" name="player-2-name-input" id="player-2-name-input" placeholder="SALAD" minlength="1" maxlength="15">
+          </label>
+          <label for="player-2-computer">
+            <input type="checkbox" name="player-2-computer" id="player-2-computer" class="computer-checkbox">
+            <span class="computer-btn" data-player="1">🤖</span>
+          </label>
+        </div>
       </div>
       <div class="content-container">
         <input type="submit" value="START GAME" id="start-btn" class="btn">
