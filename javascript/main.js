@@ -58,11 +58,13 @@ const gameBoard = (function () {
 
   let _boardSize = 3;
   let _gameBoard;
+  let _count = 0;
 
 
   function resetBoard() {
     // Empty existing gameboard if exists
     _gameBoard = [];
+    _count = 0;
     for (let i = 0; i < _boardSize; i++) {
       for (let j = 0; j < _boardSize; j++) {
         _gameBoard.push({
@@ -83,13 +85,19 @@ const gameBoard = (function () {
       return cell.row == row && cell.column == column;
     });
     cell.mark = mark;
+    _count++;
+  }
+
+  function getCount() {
+    return _count;
   }
 
 
   return {
     resetBoard,
     getBoard,
-    addMark
+    addMark,
+    getCount
   };
 
 })();
@@ -253,13 +261,13 @@ const game = (function () {
     ];
 
 
-  function evaluateMoves(moves) {
+  function evaluateMoves(moves, totalCount) {
     // Check if a player has won
     let result = null;
     if (moves.length >= 3) {
       if (_isWinningCombination(moves)) {
         result = "win"
-      } else if (moves.length >= 5) {
+      } else if (totalCount >= 9) {
         result = "draw";
       }
     }
@@ -366,7 +374,7 @@ const gameController = (function () {
   }
 
   function _handleOutcome() {
-    let outcome = game.evaluateMoves(_currentPlayer.moves);
+    let outcome = game.evaluateMoves(_currentPlayer.moves, gameBoard.getCount());
 
     switch (outcome) {
       case "win":
@@ -458,7 +466,7 @@ const gameController = (function () {
     }
 
     // Get static outcome of move
-    let outcome = _getTerminalOutcome(playerMoves, otherMoves);;
+    let outcome = _getTerminalOutcome(playerMoves, otherMoves, maximize);;
 
     // BASE CASE: static outcome is WIN or DRAW
     if (outcome != null) {
@@ -497,11 +505,15 @@ const gameController = (function () {
     }
   }
 
-  function _getTerminalOutcome(playerMoves, otherMoves) {
-    let outcome = game.evaluateMoves(playerMoves);
-    if (outcome == null) {
+  function _getTerminalOutcome(playerMoves, otherMoves, maximize) {
+    let outcome;
+    let totalCount = playerMoves.length + otherMoves.length;
+    if (maximize) {
+      outcome = game.evaluateMoves(playerMoves, totalCount);
+    } else {
       // Check if other player has won
-      if (game.evaluateMoves(otherMoves) == "win") return "lose";
+      outcome = game.evaluateMoves(otherMoves, totalCount)
+      if (outcome == "win") return "lose";
     }
 
     return outcome;
